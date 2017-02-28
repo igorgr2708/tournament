@@ -29,7 +29,7 @@
 
           
 ## Project Structure
-    * ``` tournament.sql ``` - SQL Schema installation file. Use it to install the required database and the tables within it.
-    * ``` tournament.py ``` - Main application file, contains methods to manipulate the players and matches.
-    * ``` tournament_test.py ``` - Test file. Used to check that everything works properly.
-    * ``` README.md ``` - This file with instructions.
+    * ```tournament.sql``` - SQL Schema installation file. Use it to install the required database and the tables within it.
+    * ```tournament.py``` - Main application file, contains methods to manipulate the players and matches.
+    * ```tournament_test.py``` - Test file. Used to check that everything works properly.
+    * ```README.md``` - This file with instructions.
