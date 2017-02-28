@@ -1,2 +1,3 @@
-# tournament
-Udacity Tournament Project
+# Swiss System Application
+
+## Installation Instructions
