@@ -55,8 +55,11 @@ def registerPlayer(name):
            name: Username
     """
     conn, cursor = connect()
-    cursor.execute(clean_sql("INSERT INTO "
-                             "players(name) VALUES(%s)"), (name,))
+
+    SQL = clean_sql("INSERT INTO players(name) VALUES(%s)")
+    data = (name,)
+    cursor.execute(SQL, data)
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -88,9 +91,11 @@ def reportMatch(winner, loser):
            loser : player_id of the loser
     """
     conn, cursor = connect()
-    cursor.execute(
-        clean_sql("INSERT INTO matches(winner, loser) VALUES(%s, %s)"),
-        (winner, loser,))
+
+    SQL = clean_sql("INSERT INTO matches(winner, loser) VALUES(%s, %s)")
+    data = (winner, loser,)
+
+    cursor.execute(SQL, data)
 
     conn.commit()
     cursor.close()
