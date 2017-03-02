@@ -10,8 +10,10 @@ import bleach
 
 
 def connect():
-    """Returns connection object."""
-    return psycopg2.connect("dbname=tournament")
+    """Returns connection and cursor objects."""
+    conn = psycopg2.connect("dbname=tournament")
+    cursor = conn.cursor()
+    return conn, cursor
 
 # Method deletes all the matches from 'matches' table and
 # sets to zero matches and wins in 'players' table.
@@ -21,11 +23,8 @@ def deleteMatches():
     """Method deletes all the matches from 'matches' table and
        sets to zero matches and wins in 'players' table.
     """
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     cursor.execute(clean_sql("DELETE FROM matches;"))
-    cursor.execute(clean_sql("UPDATE players SET player_matches_number = 0;"))
-    cursor.execute(clean_sql("UPDATE players SET player_wins_number = 0;"))
     conn.commit()
     cursor.close()
     conn.close()
@@ -34,8 +33,7 @@ def deleteMatches():
 # Method deletes all players records from 'players' table.
 def deletePlayers():
     """Method deletes all players records from 'players' table."""
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     cursor.execute(clean_sql("DELETE FROM players;"))
     conn.commit()
     cursor.close()
@@ -45,8 +43,7 @@ def deletePlayers():
 # Method returns the number of currently registered players.
 def countPlayers():
     """Method returns the number of currently registered players."""
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     cursor.execute(clean_sql("SELECT count(*) FROM players;"))
     return cursor.fetchone()[0]
 
@@ -57,11 +54,9 @@ def registerPlayer(name):
        Args:
            name: Username
     """
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     cursor.execute(clean_sql("INSERT INTO "
-                             "players(player_name,player_matches_number,"
-                             "player_wins_number) VALUES(%s, 0, 0)"), (name,))
+                             "players(name) VALUES(%s)"), (name,))
     conn.commit()
     cursor.close()
     conn.close()
@@ -70,10 +65,15 @@ def registerPlayer(name):
 # Method returns the list of players with their wins and matches data.
 def playerStandings():
     """Method returns the list of players with their wins and matches data."""
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     cursor.execute(
-        clean_sql("SELECT * FROM players ORDER BY player_wins_number DESC;"))
+        clean_sql("select players.id, players.name,"
+                  "(select count(*) from matches where "
+                  "matches.winner=players.id)"
+                  "as wins,(select count(*) from matches where "
+                  "matches.winner=players.id "
+                  "or matches.loser=players.id) as matches_total "
+                  "from players order by wins desc;"))
     list_of_players = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -87,23 +87,10 @@ def reportMatch(winner, loser):
            winner: player_id of the winner
            loser : player_id of the loser
     """
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     cursor.execute(
-        clean_sql("INSERT INTO matches(winner_id, loser_id) VALUES(%s, %s)"),
+        clean_sql("INSERT INTO matches(winner, loser) VALUES(%s, %s)"),
         (winner, loser,))
-
-    cursor.execute(clean_sql("UPDATE PLAYERS SET player_matches_number = "
-                             "player_matches_number + 1 "
-                             "WHERE player_id=%d;" % winner))
-    cursor.execute(
-        clean_sql("UPDATE PLAYERS SET "
-                  "player_wins_number = player_wins_number + 1 "
-                  "WHERE player_id=%d;" % winner))
-    cursor.execute(
-        clean_sql("UPDATE PLAYERS SET "
-                  "player_matches_number = player_matches_number + 1 "
-                  "WHERE player_id=%d;" % loser))
 
     conn.commit()
     cursor.close()
@@ -114,10 +101,8 @@ def reportMatch(winner, loser):
 
 def swissPairings():
     """Method returns the list of tuples for next round of Swiss system."""
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute(clean_sql("SELECT player_id, player_name FROM players"
-                             " ORDER BY player_wins_number DESC;"))
+    conn, cursor = connect()
+    cursor.execute("SELECT * FROM standings;")
     list_of_players = cursor.fetchall()
 
     pairs = []
@@ -125,10 +110,9 @@ def swissPairings():
     for i in range(0, len(list_of_players)):
         if i % 2 == 0:
             pair = (list_of_players[i][0], list_of_players[i][1],
-                    list_of_players[i+1][0], list_of_players[i+1][1])
+                    list_of_players[i + 1][0], list_of_players[i + 1][1])
 
             pairs.append(pair)
-
     cursor.close()
     conn.close()
     return pairs
@@ -141,4 +125,4 @@ def clean_sql(dirty_sql):
        Args:
            dirty_sql: initial sql code to be cleaned.
     """
-    return bleach.clean(dirty_sql, tags=[],)
+    return bleach.clean(dirty_sql, tags=['>'],)
