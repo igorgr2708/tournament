@@ -57,7 +57,7 @@ def registerPlayer(name):
     conn, cursor = connect()
 
     SQL = clean_sql("INSERT INTO players(name) VALUES(%s)")
-    data = (name,)
+    data = (clean_sql(name),)
     cursor.execute(SQL, data)
 
     conn.commit()
@@ -93,7 +93,7 @@ def reportMatch(winner, loser):
     conn, cursor = connect()
 
     SQL = clean_sql("INSERT INTO matches(winner, loser) VALUES(%s, %s)")
-    data = (winner, loser,)
+    data = (clean_sql(winner), clean_sql(loser),)
 
     cursor.execute(SQL, data)
 
