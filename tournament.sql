@@ -1,23 +1,33 @@
--- Table definitions for the tournament project.
---
--- Put your SQL 'create table' statements in this file; also 'create view'
--- statements if you choose to use it.
---
--- You can write comments in this file by starting them with two dashes, like
--- these lines here.
+-- Deletes all previous created views, tables and databases
+DROP DATABASE IF EXISTS tournament;
+DROP TABLE IF EXISTS players;
+DROP TABLE IF EXISTS matches;
+DROP VIEW IF EXISTS standings;
 
 
+-- Creates the new database
 CREATE DATABASE tournament;
 
 
+-- To work with tournament database
 \c tournament;
 
-CREATE TABLE players(player_id SERIAL,
-                     player_name VARCHAR,
-                     player_wins_number INTEGER,
-                     player_matches_number INTEGER);
+
+-- Creates table players
+CREATE TABLE players(id SERIAL PRIMARY KEY ,
+                     name VARCHAR);
 
 
-CREATE TABLE matches(match_id SERIAL,
-                     winner_id INTEGER,
-                     loser_id INTEGER);
+-- Creates table matches
+CREATE TABLE matches(match_id SERIAL PRIMARY KEY,
+                     winner INTEGER REFERENCES players(id),
+                     loser INTEGER REFERENCES players(id));
+
+
+-- Creates view to retrieve player's standings in format (id, name, wins, matches)
+CREATE VIEW standings AS
+  select players.id,
+    players.name,
+    (select count(*) from matches where matches.winner=players.id) as wins,
+    (select count(*) from matches where matches.winner=players.id or matches.loser=players.id) as matches_total
+  from players order by wins desc;
