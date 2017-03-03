@@ -82,13 +82,7 @@ def playerStandings():
     """Method returns the list of players with their wins and matches data."""
     conn, cursor = connect()
     cursor.execute(
-        clean_sql("select players.id, players.name,"
-                  "(select count(*) from matches where "
-                  "matches.winner=players.id)"
-                  "as wins,(select count(*) from matches where "
-                  "matches.winner=players.id "
-                  "or matches.loser=players.id) as matches_total "
-                  "from players order by wins desc;"))
+        clean_sql("select * from standings;"))
     list_of_players = cursor.fetchall()
     commit(conn, cursor)
     return list_of_players
