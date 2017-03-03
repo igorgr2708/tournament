@@ -15,6 +15,23 @@ def connect():
     cursor = conn.cursor()
     return conn, cursor
 
+def commit(conn, cursor):
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+# Method cleans the code against SQL injection.
+
+
+def clean_sql(dirty_sql):
+    """Method cleans the code against SQL injection.
+       Args:
+           dirty_sql: initial sql code to be cleaned.
+    """
+    return bleach.clean(dirty_sql, tags=['>'],)
+
+
 # Method deletes all the matches from 'matches' table and
 # sets to zero matches and wins in 'players' table.
 
@@ -25,9 +42,7 @@ def deleteMatches():
     """
     conn, cursor = connect()
     cursor.execute(clean_sql("DELETE FROM matches;"))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    commit(conn, cursor)
 
 
 # Method deletes all players records from 'players' table.
@@ -35,9 +50,7 @@ def deletePlayers():
     """Method deletes all players records from 'players' table."""
     conn, cursor = connect()
     cursor.execute(clean_sql("DELETE FROM players;"))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    commit(conn, cursor)
 
 
 # Method returns the number of currently registered players.
@@ -45,7 +58,9 @@ def countPlayers():
     """Method returns the number of currently registered players."""
     conn, cursor = connect()
     cursor.execute(clean_sql("SELECT count(*) FROM players;"))
-    return cursor.fetchone()[0]
+    count = cursor.fetchone()[0]
+    commit(conn, cursor)
+    return count
 
 
 # Method inserts the new player record in the 'players' table.
@@ -59,10 +74,7 @@ def registerPlayer(name):
     SQL = clean_sql("INSERT INTO players(name) VALUES(%s)")
     data = (clean_sql(name),)
     cursor.execute(SQL, data)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+    commit(conn, cursor)
 
 
 # Method returns the list of players with their wins and matches data.
@@ -78,8 +90,7 @@ def playerStandings():
                   "or matches.loser=players.id) as matches_total "
                   "from players order by wins desc;"))
     list_of_players = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    commit(conn, cursor)
     return list_of_players
 
 
@@ -96,10 +107,7 @@ def reportMatch(winner, loser):
     data = (clean_sql(winner), clean_sql(loser),)
 
     cursor.execute(SQL, data)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
+    commit(conn, cursor)
 
 # Method returns the list of tuples for next round of Swiss system.
 
@@ -118,13 +126,10 @@ def swissPairings():
                     list_of_players[i + 1][0], list_of_players[i + 1][1])
 
             pairs.append(pair)
-    cursor.close()
-    conn.close()
+    commit(conn, cursor)
     return pairs
 
 # Method cleans the code against SQL injection.
-
-
 def clean_sql(dirty_sql):
     """Method cleans the code against SQL injection.
        Args:
